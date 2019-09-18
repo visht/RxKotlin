@@ -13,20 +13,51 @@ import java.util.concurrent.TimeUnit
 class MainActivity : AppCompatActivity() {
 
     private val TAG = "MainActivity"
+    lateinit var observable1: Observable<Long>
+    lateinit var observable: Observable<String>
+    lateinit var observer: Observer<String>
+    lateinit var observer1: Observer<Long>
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        startRxJust();
+        startRxJust()
         startRxInterval()
+        startConcatingTwoRxObservers();
+    }
+
+    private fun startConcatingTwoRxObservers() {
+        val observable: Observable<Any> = Observable.concat(observable, observable1)
+
+        val observer = object : Observer<Any> {
+            override fun onSubscribe(d: Disposable) {
+                Log.d("subscribe", "${d.isDisposed}")
+            }
+
+            override fun onNext(t: Any) {
+                Log.d("NEXT", "$t")
+            }
+
+            override fun onError(e: Throwable) {
+                Log.d("error", "${e.stackTrace}")
+            }
+
+            override fun onComplete() {
+                Log.d("completed", "0")
+            }
+        }
+
+        observable.observeOn(AndroidSchedulers.mainThread())
+                .subscribeOn(Schedulers.io())
+                .subscribe(observer)
     }
 
     private fun startRxInterval() {
-        var observable1 = Observable.interval(2, 3, TimeUnit.SECONDS)
+        observable1 = Observable.interval(2, 3, TimeUnit.SECONDS)
 
-        var observer1 = object : Observer<Long> {
+        observer1 = object : Observer<Long> {
             override fun onSubscribe(d: Disposable) {
                 Log.d("subscribe", "${d.isDisposed}")
             }
@@ -52,8 +83,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startRxJust() {
-        var observable: Observable<String> = Observable.just("1", "2", "#")
-        var observer: Observer<String> = object : Observer<String> {
+        observable = Observable.just("1", "2", "#")
+        observer = object : Observer<String> {
             override fun onSubscribe(d: Disposable) {
                 Log.d("SUBSCRIBE", "1")
             }
@@ -67,7 +98,7 @@ class MainActivity : AppCompatActivity() {
             }
 
             override fun onNext(t: String) {
-                Log.d("NEXT", "$t")
+                Log.d("NEXT", t)
             }
 
         }
